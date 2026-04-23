@@ -1165,6 +1165,18 @@ class MainWindowOptions(widgets.QDialog):
             self.mode = 1
             self.done(True)
         elif self.vectorbutton.isChecked():
+            # Read live values from combos so Connect works without a prior Save
+            ch = self.vector_channelcombo.currentData()
+            if ch is None:
+                msgbox = widgets.QMessageBox()
+                msgbox.setWindowIcon(gui.QIcon(ICON_OBD))
+                msgbox.setWindowTitle(version.__appname__)
+                msgbox.setText(_("No Vector CAN channel detected. Check that the Vector driver and hardware are installed."))
+                msgbox.exec_()
+                return
+            options.vector_channel = ch
+            options.vector_bitrate = self.vector_bitratecombo.currentData()
+            options.vector_app_name = self.vector_appnameinput.text()
             self.port = f"VECTOR:{options.vector_channel}"
             self.mode = 1
             self.done(True)
