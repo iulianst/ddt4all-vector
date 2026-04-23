@@ -142,15 +142,43 @@ def main(argv=None) -> int:
             msgbox.exec_()
 
         print(_("Initializing ELM with speed %i...") % port_speed)
-        options.elm = elm.ELM(options.port, port_speed, pc.adapter, pc.raise_port_speed)
+        if pc.adapter == "VECTOR" or options.port.startswith("VECTOR:"):
+            # Parse channel from port string "VECTOR:<channel_index>"
+            try:
+                channel = int(options.port.split(":")[1])
+            except (IndexError, ValueError):
+                channel = options.vector_channel
+            try:
+                from ddt4all.core.vector.vector_can_device import VectorCanDevice
+                options.elm_failed = False
+                options.last_error = ""
+                options.elm = VectorCanDevice(
+                    channel=channel,
+                    bitrate=options.vector_bitrate,
+                    app_name=options.vector_app_name,
+                    rx_queue_size=options.vector_rx_queue,
+                )
+                options.elm_failed = not options.elm.connectionStatus
+            except Exception as exc:
+                options.elm_failed = True
+                options.last_error = str(exc)
+        else:
+            options.elm = elm.ELM(options.port, port_speed, pc.adapter, pc.raise_port_speed)
 
         if options.elm_failed:
             pc.show()
-            pc.logview.append(options.get_last_error())
+            error_detail = options.get_last_error()
+            pc.logview.append(error_detail)
             msgbox = widgets.QMessageBox()
             msgbox.setWindowIcon(gui.QIcon(":icons/obd.png"))
             msgbox.setWindowTitle(version.__appname__)
-            msgbox.setText(_("No ELM327 or OBDLINK-SX detected on COM port ") + options.port)
+            if options.port.startswith("VECTOR:"):
+                msg = _("Vector CAN connection failed on ") + options.port
+                if error_detail:
+                    msg += "\n" + error_detail
+            else:
+                msg = _("No ELM327 or OBDLINK-SX detected on COM port ") + options.port
+            msgbox.setText(msg)
             msgbox.exec_()
         else:
             nok = False

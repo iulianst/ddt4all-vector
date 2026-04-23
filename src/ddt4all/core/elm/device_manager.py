@@ -44,6 +44,10 @@ class DeviceManager:
             'usbcan': {
                 'baudrate': 500000, 'timeout': 2, 'rtscts': False, 'dsrdtr': False,
                 'stn_support': False, 'stpx_support': False, 'pin_swap': True
+            },
+            'vector': {
+                'baudrate': 500000, 'timeout': 4, 'rtscts': False, 'dsrdtr': False,
+                'stn_support': False, 'stpx_support': False, 'pin_swap': False
             }
         }
         return settings.get(DeviceManager.normalize_adapter_type(device_type), settings['unknown'])
@@ -63,7 +67,8 @@ class DeviceManager:
             'DERLEK': 'derlek_usb_diag2',  # DerleK USB-DIAG2 devices (default to DIAG2)
             'DERLEK_USB_DIAG2': 'derlek_usb_diag2',  # DerleK USB-DIAG2 devices
             'DERLEK_USB_DIAG3': 'derlek_usb_diag3',  # DerleK USB-DIAG3 devices
-            'USBCAN': 'usbcan'  # USB CAN adapters - use usbdevice.py
+            'USBCAN': 'usbcan',   # USB CAN adapters - use usbdevice.py
+            'VECTOR': 'vector',   # Vector VN CAN hardware via python-can + ISO-TP
         }
         return adapter_mapping.get(adapter_type.upper(), 'elm327')
 

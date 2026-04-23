@@ -30623,3 +30623,95 @@ def qCleanupResources():
     QtCore.qUnregisterResourceData(rcc_version, qt_resource_struct, qt_resource_name, qt_resource_data)
 
 qInitResources()
+
+# ---------------------------------------------------------------------------
+# Supplemental icons added after initial resource compilation
+# vector_can.png – registered dynamically at import time
+# ---------------------------------------------------------------------------
+import os as _os
+import zlib as _zlib
+
+def _register_supplemental_icons():
+    """Register icons that were added after the compiled QRC was generated.
+
+    Uses a small self-contained Qt RCC v1 binary built from the raw PNG bytes
+    so no external pyrcc5 call is needed.
+    """
+    import struct as _struct
+
+    def _make_rcc(name: str, data: bytes) -> bytes:
+        """Build a minimal RCC v1 binary blob for a single resource under /icons/."""
+        # Compress with zlib (Qt expects zlib-compressed with 4-byte original-size prefix)
+        compressed = _zlib.compress(data, 9)
+        orig_size = len(data)
+        # Qt data format: 4-byte big-endian original size, then zlib stream (no extra header)
+        payload = _struct.pack(">I", orig_size) + compressed
+
+        # Name table entry: 2B length, 4B hash, 2B first-char, then UTF-16BE chars
+        def _name_entry(s: str) -> bytes:
+            chars = s.encode("utf-16-be")
+            length = len(s)
+            # hash as used by pyrcc5 (Qt string hash)
+            h = 0
+            for c in s:
+                h = (h << 4) + ord(c)
+                g = h & 0xF0000000
+                if g:
+                    h ^= g >> 23
+                h &= ~g
+            h &= 0xFFFFFFFF
+            return _struct.pack(">HI", length, h) + chars
+
+        icons_name = _name_entry("icons")
+        file_name = _name_entry(name)
+
+        # Name offsets
+        icons_off = 0
+        file_off = len(icons_name)
+        name_table = icons_name + file_name
+
+        # Data table: one entry – 4B offset into data payload (0), then payload
+        # pyrcc5 format: data_table[i] = 4B compressed_size + payload
+        data_entry = _struct.pack(">I", len(payload)) + payload
+        data_table = data_entry
+        data_off = 0  # offset of above within data_table
+
+        # Struct table (v1 format, 14 bytes per entry):
+        # root dir node  (type=2=dir, name_off, child_count, first_child_id)
+        # icons dir node (type=2=dir, name_off, child_count, first_child_id)
+        # file node      (type=1=file, name_off, locale=0, data_off)
+        def _dir_node(name_off: int, count: int, first_child: int) -> bytes:
+            return _struct.pack(">HHHI", name_off, 2, count, first_child)
+
+        def _file_node(name_off: int, data_offset: int) -> bytes:
+            return _struct.pack(">HHHH I", name_off, 1, 0, 0, data_offset)
+
+        struct_table = (
+            _dir_node(icons_off, 1, 1)   # node 0: root dir  → child[0] = node 1
+            + _dir_node(icons_off, 1, 2) # node 1: icons dir → child[0] = node 2
+            + _file_node(file_off, data_off)  # node 2: the file
+        )
+
+        return struct_table, name_table, data_table
+
+    icons_dir = _os.path.join(
+        _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+        "resources", "icons",
+    )
+    supplemental = [
+        "vector_can.png",
+    ]
+
+    for fname in supplemental:
+        fpath = _os.path.join(icons_dir, fname)
+        if not _os.path.exists(fpath):
+            continue
+        try:
+            with open(fpath, "rb") as _fh:
+                raw = _fh.read()
+            struct_t, name_t, data_t = _make_rcc(fname, raw)
+            QtCore.qRegisterResourceData(1, struct_t, name_t, data_t)
+        except Exception as _e:
+            print(f"Warning: could not register supplemental icon {fname}: {_e}")
+
+_register_supplemental_icons()

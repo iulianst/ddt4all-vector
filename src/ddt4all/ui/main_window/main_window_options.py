@@ -19,6 +19,7 @@ from ddt4all.ui.main_window.icons_paths import (
     ICON_OBDLINK,
     ICON_USB,
     ICON_VGATE,
+    ICON_VECTOR,
     ICON_VLINKER,
     ICON_WIFI,
 )
@@ -149,6 +150,15 @@ class MainWindowOptions(widgets.QDialog):
         self.doipbutton.setToolTip(_("DoIP (Diagnostics over IP)"))
         medialayout.addWidget(self.doipbutton)
 
+        self.vectorbutton = widgets.QPushButton()
+        self.vectorbutton.setIcon(gui.QIcon(ICON_VECTOR))
+        self.vectorbutton.setIconSize(core.QSize(60, 60))
+        self.vectorbutton.setFixedHeight(64)
+        self.vectorbutton.setFixedWidth(64)
+        self.vectorbutton.setCheckable(True)
+        self.vectorbutton.setToolTip(_("Vector VN CAN Interface"))
+        medialayout.addWidget(self.vectorbutton)
+
         layout.addLayout(medialayout)
 
         self.btbutton.toggled.connect(self.bt)
@@ -160,6 +170,7 @@ class MainWindowOptions(widgets.QDialog):
         self.derelekbutton.toggled.connect(self.derelek)
         self.vgatebutton.toggled.connect(self.vgate)
         self.doipbutton.toggled.connect(self.doip)
+        self.vectorbutton.toggled.connect(self.vector)
 
         # languages setting
         if "LANG" not in os.environ.keys():
@@ -321,6 +332,60 @@ class MainWindowOptions(widgets.QDialog):
 
         layout.addWidget(doip_groupbox)
 
+        # Vector CAN configuration section
+        vector_grouplayout = widgets.QVBoxLayout()
+        self.vector_groupbox = widgets.QGroupBox(_("Vector VN CAN Configuration"))
+        self.vector_groupbox.setLayout(vector_grouplayout)
+
+        vector_channellayout = widgets.QHBoxLayout()
+        vector_channellabel = widgets.QLabel(_("Channel : "))
+        self.vector_channelcombo = widgets.QComboBox()
+        try:
+            from ddt4all.core.vector.vector_utils import enumerate_vector_channels
+            hw_channels = enumerate_vector_channels()
+        except Exception:
+            hw_channels = []
+        if hw_channels:
+            for display_name, ch_index in hw_channels:
+                self.vector_channelcombo.addItem(display_name, ch_index)
+        else:
+            for i in range(8):
+                self.vector_channelcombo.addItem(_("Channel %d") % i, i)
+        saved_ch = getattr(options, 'vector_channel', 0)
+        idx = self.vector_channelcombo.findData(saved_ch)
+        if idx >= 0:
+            self.vector_channelcombo.setCurrentIndex(idx)
+        vector_channellayout.addWidget(vector_channellabel)
+        vector_channellayout.addWidget(self.vector_channelcombo)
+        vector_channellayout.addStretch()
+        vector_grouplayout.addLayout(vector_channellayout)
+
+        vector_bitratelayout = widgets.QHBoxLayout()
+        vector_bitratelabel = widgets.QLabel(_("Bitrate : "))
+        self.vector_bitratecombo = widgets.QComboBox()
+        for br in [125000, 250000, 500000, 1000000]:
+            self.vector_bitratecombo.addItem(_("%.0f kbit/s") % (br / 1000), br)
+        saved_br = getattr(options, 'vector_bitrate', 500000)
+        idx = self.vector_bitratecombo.findData(saved_br)
+        if idx >= 0:
+            self.vector_bitratecombo.setCurrentIndex(idx)
+        vector_bitratelayout.addWidget(vector_bitratelabel)
+        vector_bitratelayout.addWidget(self.vector_bitratecombo)
+        vector_bitratelayout.addStretch()
+        vector_grouplayout.addLayout(vector_bitratelayout)
+
+        vector_appnamelayout = widgets.QHBoxLayout()
+        vector_appnamelabel = widgets.QLabel(_("App name : "))
+        self.vector_appnameinput = widgets.QLineEdit()
+        self.vector_appnameinput.setText(getattr(options, 'vector_app_name', 'DDT4All'))
+        vector_appnamelayout.addWidget(vector_appnamelabel)
+        vector_appnamelayout.addWidget(self.vector_appnameinput)
+        vector_grouplayout.addLayout(vector_appnamelayout)
+
+        self.vector_groupbox.hide()
+        self.vectorbutton.toggled.connect(self.vector_groupbox.setVisible)
+        layout.addWidget(self.vector_groupbox)
+
         obdlinkspeedlayout = widgets.QHBoxLayout()
         self.obdlinkspeedcombo = widgets.QComboBox()
         obdlinkspeedlabel = widgets.QLabel(_("Change UART speed"))
@@ -372,6 +437,14 @@ class MainWindowOptions(widgets.QDialog):
         options.configuration["doip_vehicle_announcement"] = options.doip_vehicle_announcement
         options.configuration["doip_auto_reconnect"] = options.doip_auto_reconnect
         options.configuration["doip_preset"] = options.doip_preset
+
+        # Save Vector CAN configuration
+        options.vector_channel = self.vector_channelcombo.currentData()
+        options.vector_bitrate = self.vector_bitratecombo.currentData()
+        options.vector_app_name = self.vector_appnameinput.text()
+        options.configuration["vector_channel"] = options.vector_channel
+        options.configuration["vector_bitrate"] = options.vector_bitrate
+        options.configuration["vector_app_name"] = options.vector_app_name
 
         options.save_config()
         self.close()  # Just close dialog, don't exit app
@@ -555,6 +628,7 @@ class MainWindowOptions(widgets.QDialog):
         self.elsbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
         self.derelekbutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(True)
 
@@ -585,6 +659,7 @@ class MainWindowOptions(widgets.QDialog):
         self.elsbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
         self.derelekbutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(True)
         self.speedcombo.setEnabled(False)
 
@@ -621,6 +696,7 @@ class MainWindowOptions(widgets.QDialog):
         self.obdlinkbutton.setChecked(False)
         self.elsbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(True)
 
@@ -654,6 +730,7 @@ class MainWindowOptions(widgets.QDialog):
         self.wifibutton.setChecked(False)
         self.elsbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(True)
         self.obdlinkbutton.setChecked(True)
@@ -682,6 +759,7 @@ class MainWindowOptions(widgets.QDialog):
         self.wifibutton.setChecked(False)
         self.obdlinkbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(True)
         self.elsbutton.setChecked(True)
@@ -715,6 +793,7 @@ class MainWindowOptions(widgets.QDialog):
         self.elsbutton.setChecked(False)
         self.derelekbutton.setChecked(False)
         self.vgatebutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(True)
         self.vlinkerbutton.setChecked(True)
@@ -741,6 +820,7 @@ class MainWindowOptions(widgets.QDialog):
         self.vlinkerbutton.blockSignals(True)
         self.derelekbutton.blockSignals(True)
         self.vgatebutton.blockSignals(True)
+        self.vectorbutton.blockSignals(True)
 
         self.usbbutton.setChecked(False)
         self.speedcombo.setCurrentIndex(0)  # 38400 baud for DERLEK
@@ -750,6 +830,7 @@ class MainWindowOptions(widgets.QDialog):
         self.elsbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
         self.vgatebutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(True)
         self.derelekbutton.setChecked(True)
@@ -759,40 +840,10 @@ class MainWindowOptions(widgets.QDialog):
         self.usbbutton.blockSignals(False)
         self.obdlinkbutton.blockSignals(False)
         self.elsbutton.blockSignals(False)
-        self.obdlinkspeedcombo.addItem(_("500000"))
-        self.obdlinkspeedcombo.addItem(_("1000000"))  # VGate can handle very high speeds
-        
-        # Display STPX support information
-        self.logview.append(_("VGate iCar Pro selected - Enhanced STN/STPX support enabled"))
-        self.logview.append(_("Long command support and high-speed communication available"))
-        
-        self.wifibutton.blockSignals(True)
-        self.btbutton.blockSignals(True)
-        self.usbbutton.blockSignals(True)
-        self.obdlinkbutton.blockSignals(True)
-        self.elsbutton.blockSignals(True)
-        self.vlinkerbutton.blockSignals(True)
-        self.derelekbutton.blockSignals(True)
-
-        self.usbbutton.setChecked(False)
-        self.speedcombo.setCurrentIndex(2)  # 115200 baud for VGate (high speed)
-        self.btbutton.setChecked(False)
-        self.wifibutton.setChecked(False)
-        self.obdlinkbutton.setChecked(False)
-        self.elsbutton.setChecked(False)
-        self.vlinkerbutton.setChecked(False)
-        self.wifiinput.setEnabled(False)
-        self.speedcombo.setEnabled(True)
-        self.vgatebutton.setChecked(True)
-
-        self.wifibutton.blockSignals(False)
-        self.btbutton.blockSignals(False)
-        self.usbbutton.blockSignals(False)
-        self.obdlinkbutton.blockSignals(False)
-        self.elsbutton.blockSignals(False)
         self.vlinkerbutton.blockSignals(False)
         self.derelekbutton.blockSignals(False)
-        # self.elmchk.setEnabled(False)
+        self.vgatebutton.blockSignals(False)
+        self.vectorbutton.blockSignals(False)
 
     def vgate(self):
         self.adapter = "VGATE"
@@ -814,6 +865,7 @@ class MainWindowOptions(widgets.QDialog):
         self.elsbutton.blockSignals(True)
         self.vlinkerbutton.blockSignals(True)
         self.derelekbutton.blockSignals(True)
+        self.vectorbutton.blockSignals(True)
 
         self.usbbutton.setChecked(False)
         self.speedcombo.setCurrentIndex(2)  # 115200 baud for VGate (high speed)
@@ -822,6 +874,7 @@ class MainWindowOptions(widgets.QDialog):
         self.obdlinkbutton.setChecked(False)
         self.elsbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(True)
         self.vgatebutton.setChecked(True)
@@ -833,6 +886,7 @@ class MainWindowOptions(widgets.QDialog):
         self.elsbutton.blockSignals(False)
         self.vlinkerbutton.blockSignals(False)
         self.derelekbutton.blockSignals(False)
+        self.vectorbutton.blockSignals(False)
         # self.elmchk.setEnabled(False)
 
     def apply_doip_preset(self, index):
@@ -1027,6 +1081,7 @@ class MainWindowOptions(widgets.QDialog):
         self.vlinkerbutton.blockSignals(True)
         self.derelekbutton.blockSignals(True)
         self.vgatebutton.blockSignals(True)
+        self.vectorbutton.blockSignals(True)
 
         self.usbbutton.setChecked(False)
         self.btbutton.setChecked(False)
@@ -1035,6 +1090,7 @@ class MainWindowOptions(widgets.QDialog):
         self.elsbutton.setChecked(False)
         self.vlinkerbutton.setChecked(False)
         self.vgatebutton.setChecked(False)
+        self.vectorbutton.setChecked(False)
         self.wifiinput.setEnabled(False)
         self.speedcombo.setEnabled(False)  # DoIP doesn't use serial port speeds
         self.doipbutton.setChecked(True)
@@ -1047,7 +1103,47 @@ class MainWindowOptions(widgets.QDialog):
         self.vlinkerbutton.blockSignals(False)
         self.derelekbutton.blockSignals(False)
         self.vgatebutton.blockSignals(False)
+        self.vectorbutton.blockSignals(False)
         # self.elmchk.setEnabled(False)
+
+    def vector(self):
+        if not self.vectorbutton.isChecked():
+            return
+        self.adapter = "VECTOR"
+        self.obdlinkspeedcombo.clear()
+        self.obdlinkspeedcombo.addItem(_("N/A"))
+        self.wifibutton.blockSignals(True)
+        self.btbutton.blockSignals(True)
+        self.usbbutton.blockSignals(True)
+        self.obdlinkbutton.blockSignals(True)
+        self.elsbutton.blockSignals(True)
+        self.vlinkerbutton.blockSignals(True)
+        self.derelekbutton.blockSignals(True)
+        self.vgatebutton.blockSignals(True)
+        self.doipbutton.blockSignals(True)
+
+        self.usbbutton.setChecked(False)
+        self.btbutton.setChecked(False)
+        self.wifibutton.setChecked(False)
+        self.obdlinkbutton.setChecked(False)
+        self.elsbutton.setChecked(False)
+        self.vlinkerbutton.setChecked(False)
+        self.derelekbutton.setChecked(False)
+        self.vgatebutton.setChecked(False)
+        self.doipbutton.setChecked(False)
+        self.wifiinput.setEnabled(False)
+        self.speedcombo.setEnabled(False)
+        self.vectorbutton.setChecked(True)
+
+        self.wifibutton.blockSignals(False)
+        self.btbutton.blockSignals(False)
+        self.usbbutton.blockSignals(False)
+        self.obdlinkbutton.blockSignals(False)
+        self.elsbutton.blockSignals(False)
+        self.vlinkerbutton.blockSignals(False)
+        self.derelekbutton.blockSignals(False)
+        self.vgatebutton.blockSignals(False)
+        self.doipbutton.blockSignals(False)
 
     def connectedMode(self):
         self.timer.stop()
@@ -1066,6 +1162,10 @@ class MainWindowOptions(widgets.QDialog):
 
         if self.wifibutton.isChecked():
             self.port = str(self.wifiinput.text())
+            self.mode = 1
+            self.done(True)
+        elif self.vectorbutton.isChecked():
+            self.port = f"VECTOR:{options.vector_channel}"
             self.mode = 1
             self.done(True)
         else:

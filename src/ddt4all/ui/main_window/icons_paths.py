@@ -19,3 +19,8 @@ ICON_VGATE = ":icons/vgate.png"
 ICON_VLINKER = ":icons/vlinker.png"
 ICON_REFRESH = ":icons/refresh.png"
 ICON_DOIP = ":icons/doip.png"
+
+# vector_can.png is not compiled into the Qt resource bundle (pyrcc5 not run),
+# so we load it from the file system directly.
+from pathlib import Path as _Path
+ICON_VECTOR = str(_Path(__file__).resolve().parent.parent.parent.parent.parent / "resources" / "icons" / "vector_can.png")

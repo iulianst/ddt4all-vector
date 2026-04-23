@@ -53,11 +53,49 @@ DDT4All is a comprehensive tool to create your own ECU parameters screens and co
   - [Source Code](https://github.com/cedricp/ecutweaker)
   - [Download](https://github.com/cedricp/ddt4all/releases)
 
-### Notes:
-This application is work in progress, so be very careful when using expert mode.
-Using the application in non expert mode should not be harmful for your vehicle (leave the expert mode button released).
+## 🔌 Vector VN CAN Hardware Support
 
-**Important :**
+This fork adds a native **Vector VN** CAN interface backend using [python-can](https://python-can.readthedocs.io/) and [ISO-TP (can-isotp)](https://can-isotp.readthedocs.io/), enabling DDT4All to communicate directly over a real CAN bus without an ELM327 adapter.
+
+### Prerequisites
+
+1. **Vector XL Driver Library** — Install from [vector.com](https://www.vector.com/int/en/products/products-a-z/libraries-drivers/xl-driver-library/) (Windows only; Linux support is experimental in python-can).
+2. **`[can]` extras** — Install DDT4All with the CAN optional group:
+   ```bash
+   pip install -e ".[can]"
+   ```
+   This installs `python-can>=4.0`, `can-isotp>=2.0` and `obd`.
+
+### Supported Hardware
+
+Any Vector VN-series CAN interface supported by the Vector XL Driver Library:
+
+| Device | Notes |
+|--------|-------|
+| VN1610 / VN1611 | Dual-channel USB CAN |
+| VN1630 / VN1640 | 4-channel USB CAN |
+| VN7600 | PCIe |
+| CANalyzer / CANoe hardware | When used with XL Driver Library |
+
+### Selecting Vector in the UI
+
+1. Launch DDT4All.
+2. In the **Options** dialog, click the **Vector VN** button (rightmost in the adapter row).
+3. In the **Vector VN CAN Configuration** panel that appears, set:
+   - **Channel** — physical channel index (0-based, or auto-detected if hardware is present)
+   - **Bitrate** — 125 / 250 / 500 / 1000 kbit/s
+   - **App name** — application name registered with the Vector XL driver (default: `DDT4All`)
+4. Click **Connected mode** to open the CAN bus.
+
+### Known Limitations
+
+- Vector hardware is only detected at Options dialog open time; hot-plug requires reopening the dialog.
+- Only ISO 15765-2 (ISO-TP) transport is supported; raw CAN frames are not exposed to plugins.
+- Keep-alive transmissions use the configured start-session command; verify your target ECU accepts repeated session re-opens.
+
+---
+
+
 
 **Do not use this software if you don't have a strong knowledge of how a CAN network (or ECU) works, you can really do bad things with it, especially if you're working on a vehicle**
 

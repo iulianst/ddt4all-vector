@@ -43,6 +43,12 @@ doip_timeout = 5
 doip_vehicle_announcement = True
 doip_auto_reconnect = False
 doip_preset = "Custom"
+
+# Vector CAN Configuration
+vector_channel = 0          # python-can channel index (0-based)
+vector_bitrate = 500000     # 500 kbps default
+vector_app_name = "DDT4All" # app name shown in CANdb++ / CANalyzer
+vector_rx_queue = 16384     # receive queue depth
 configuration = {
     "lang": None,
     "dark": False,
@@ -60,7 +66,12 @@ configuration = {
     "doip_timeout": 5,
     "doip_vehicle_announcement": True,
     "doip_auto_reconnect": False,
-    "doip_preset": "Custom"
+    "doip_preset": "Custom",
+    # Vector CAN
+    "vector_channel": 0,
+    "vector_bitrate": 500000,
+    "vector_app_name": "DDT4All",
+    "vector_rx_queue": 16384,
 }
 lang_list = {
     "English": "en_US",
@@ -102,6 +113,10 @@ def create_new_config():
     configuration["preferred_device_order"] = ["vlinker", "vgate", "derlek_usb_diag2", "derlek_usb_diag3", "obdlink", "obdlink_ex", "els27", "elm327"]
     configuration["enable_device_validation"] = True
     configuration["carlist_sort_mode"] = "code"
+    configuration["vector_channel"] = 0
+    configuration["vector_bitrate"] = 500000
+    configuration["vector_app_name"] = "DDT4All"
+    configuration["vector_rx_queue"] = 16384
     save_config()
 
 
@@ -141,7 +156,18 @@ def load_configuration():
         configuration["doip_vehicle_announcement"] = doip_vehicle_announcement
         configuration["doip_auto_reconnect"] = doip_auto_reconnect
         configuration["doip_preset"] = doip_preset
-        
+
+        # Load Vector CAN configuration
+        global vector_channel, vector_bitrate, vector_app_name, vector_rx_queue
+        vector_channel = config.get("vector_channel", 0)
+        vector_bitrate = config.get("vector_bitrate", 500000)
+        vector_app_name = config.get("vector_app_name", "DDT4All")
+        vector_rx_queue = config.get("vector_rx_queue", 16384)
+        configuration["vector_channel"] = vector_channel
+        configuration["vector_bitrate"] = vector_bitrate
+        configuration["vector_app_name"] = vector_app_name
+        configuration["vector_rx_queue"] = vector_rx_queue
+
         os.environ['LANG'] = str(configuration["lang"])
         f.close()
     except Exception as e:

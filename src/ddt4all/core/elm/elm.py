@@ -136,6 +136,15 @@ def get_available_ports():
             port_entry = (f"{ip}:{doip_target_port}", desc, "DoIP", "offline")
             ports.append(port_entry)
     
+    # Check for Vector VN CAN channels
+    try:
+        from ddt4all.core.vector.vector_utils import enumerate_vector_channels
+        vector_channels = enumerate_vector_channels()
+        for display_name, ch_index in vector_channels:
+            ports.append((f"VECTOR:{ch_index}", display_name, "Vector", "online"))
+    except Exception:
+        pass
+
     # Then check for serial ports
     try:
         portlist = list_ports.comports()
