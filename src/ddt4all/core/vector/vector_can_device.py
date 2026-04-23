@@ -72,6 +72,7 @@ class VectorCanDevice:
     # ELM compatibility attributes
     # ------------------------------------------------------------------
     connectionStatus: bool = False
+    adapter_type: str = "VECTOR"
     currentaddress: str = ""
     startSession: str = ""
     rsp_cache: dict

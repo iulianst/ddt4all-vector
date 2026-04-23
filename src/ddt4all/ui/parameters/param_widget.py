@@ -697,7 +697,7 @@ class ParamWidget(widgets.QWidget):
 
         elm_response = '00 ' * 70
         if not options.simulation_mode:
-            if not options.elm.connectionStat():
+            if not options.elm.connectionStatus:
                 options.main_window.setConnected(False)
                 self.logview.append(_("Connection to ELM lost, trying to reconnect..."))
                 if reconnect_elm():
