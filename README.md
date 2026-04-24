@@ -95,7 +95,11 @@ Any Vector VN-series CAN interface supported by the Vector XL Driver Library:
 
 ---
 
+### Notes:
+This application is work in progress, so be very careful when using expert mode.
+Using the application in non expert mode should not be harmful for your vehicle (leave the expert mode button released).
 
+**Important :**
 
 **Do not use this software if you don't have a strong knowledge of how a CAN network (or ECU) works, you can really do bad things with it, especially if you're working on a vehicle**
 
